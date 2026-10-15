@@ -1,7 +1,25 @@
 import CONSTANTS from "./constants.js";
 import * as lib from "./lib.js";
 
-Hooks.on("ready", () => {
+Hooks.once("init", () => {
+
+    // Register settings during init (rather than ready) so they exist before the
+    // Settings Configuration app and other modules try to read them.
+    for (const [key, value] of Object.entries(foundry.utils.deepClone(CONSTANTS.SETTINGS))) {
+        game.settings.register(CONSTANTS.MODULE_NAME, key, value);
+    }
+
+    game.settings.registerMenu(CONSTANTS.MODULE_NAME, CONSTANTS.MODULE_NAME, {
+        name: "Set Up Potato Settings",
+        label: "Show Dialog",
+        icon: "fa-solid fa-potato",
+        type: PotatoOrNotApplication,
+        restricted: false
+    });
+
+});
+
+Hooks.once("ready", () => {
 
     window.PotatoOrNot = new PotatoOrNotHandler();
 
@@ -18,18 +36,6 @@ Hooks.on("ready", () => {
 class PotatoOrNotHandler {
 
     constructor() {
-
-        for (const [key, value] of Object.entries(foundry.utils.deepClone(CONSTANTS.SETTINGS))) {
-            game.settings.register(CONSTANTS.MODULE_NAME, key, value);
-        }
-
-        game.settings.registerMenu("potato-or-not", "potato-or-not", {
-            name: "Set Up Potato Settings",
-            label: "Show Dialog",
-            icon: "fas fa-potato",
-            type: PotatoOrNotApplication,
-            restricted: false
-        });
 
         this._settings = foundry.utils.deepClone(CONSTANTS.BASE_SETTINGS);
 
@@ -100,6 +106,10 @@ class PotatoOrNotHandler {
 
         for (let module of modules) {
             for (let [setting, value] of Object.entries(this.current_settings[module])) {
+                if (!game.settings.settings.has(`${module}.${setting}`)) {
+                    console.warn(`Potato Or Not | Skipped ${module}.${setting} - it is not a registered setting in this version of Foundry or the module is not active`);
+                    continue;
+                }
                 try {
                     await game.settings.set(module, setting, value);
                     console.log(`Potato Or Not | Set ${module}.${setting} to ${value}`);
@@ -179,6 +189,10 @@ class PotatoOrNotHandler {
         this.settings[quality_level][module][setting] = value;
 
         if (force && this.quality === quality_level) {
+            if (!game.settings.settings.has(`${module}.${setting}`)) {
+                console.warn(`Potato Or Not | Could not force-apply ${module}.${setting} - it is not a registered setting`);
+                return false;
+            }
             try {
                 game.settings.set(module, setting, value);
                 return true;
@@ -222,10 +236,10 @@ class PotatoOrNotApplication extends foundry.applications.api.HandlebarsApplicat
     static DEFAULT_OPTIONS = {
         id: "potato-or-not",
         window: {
+            title: "PotatoOrNot.Title",
             contentClasses: ["standard-form"],
             icon: "fa-solid fa-potato"
         },
-        title: "Potato Or Not",
         tag: "form",
         form: {
             handler: PotatoOrNotApplication.myFormHandler,
@@ -264,7 +278,7 @@ class PotatoOrNotApplication extends foundry.applications.api.HandlebarsApplicat
     _selectedPotatoLevel(event) {
         event.preventDefault();
         for(let element of this.element.querySelectorAll(".potato-level-container")){
-            element.removeAttribute('active', false);
+            element.removeAttribute('active');
         }
         const btn = event.currentTarget;
         btn.setAttribute('active', true);
