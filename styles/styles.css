@@ -55,3 +55,51 @@
 .potato button{
     width: 100%;
 }
+/* Player Check (GM) */
+.potato-player-check .potato-player-check-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.potato-player-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.potato-player-table th,
+.potato-player-table td {
+    padding: 0.35rem 0.5rem;
+    text-align: left;
+}
+
+.potato-player-table .online-dot {
+    font-size: 0.6rem;
+    margin-right: 0.35rem;
+    opacity: 0.35;
+}
+
+.potato-player-table .online-dot.online {
+    color: #3fb950;
+    opacity: 1;
+}
+
+.potato-player-table .gm-tag {
+    font-size: 0.75em;
+    opacity: 0.7;
+}
+
+.potato-player-table .state-chosen .state { color: #3fb950; }
+.potato-player-table .state-notChosen .state { color: #d29922; }
+.potato-player-table .state-notSeen .state { opacity: 0.6; }
+
+.potato-player-table .outdated {
+    margin-left: 0.35rem;
+    font-size: 0.8em;
+    color: #d29922;
+}
+
+.potato-player-table .seen {
+    font-size: 0.85em;
+    opacity: 0.8;
+}

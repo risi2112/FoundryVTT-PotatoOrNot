@@ -1,0 +1,37 @@
+<section class="potato-player-check-body">
+	<p class="hint">{{localize "PotatoOrNot.PlayerCheck.Intro"}}</p>
+
+	<table class="potato-player-table">
+		<thead>
+			<tr>
+				<th>{{localize "PotatoOrNot.PlayerCheck.Player"}}</th>
+				<th>{{localize "PotatoOrNot.PlayerCheck.Status"}}</th>
+				<th>{{localize "PotatoOrNot.PlayerCheck.Choice"}}</th>
+				<th>{{localize "PotatoOrNot.PlayerCheck.LastSeen"}}</th>
+			</tr>
+		</thead>
+		<tbody>
+			{{#each rows}}
+			<tr class="state-{{state}}">
+				<td>
+					<i class="fa-solid fa-circle online-dot {{#if online}}online{{/if}}" data-tooltip="{{#if online}}{{localize 'PotatoOrNot.PlayerCheck.Online'}}{{else}}{{localize 'PotatoOrNot.PlayerCheck.Offline'}}{{/if}}"></i>
+					{{name}}{{#if isGM}} <span class="gm-tag">GM</span>{{/if}}
+				</td>
+				<td>
+					<span class="state">{{stateLabel}}</span>
+					{{#if outdated}}<span class="outdated" data-tooltip="{{localize 'PotatoOrNot.PlayerCheck.OutdatedHint'}}">v{{version}}</span>{{/if}}
+				</td>
+				<td>{{level}}</td>
+				<td class="seen">{{seenAt}}</td>
+			</tr>
+			{{/each}}
+		</tbody>
+	</table>
+
+	<footer class="form-footer">
+		<button type="button" data-action="askAgain">
+			<i class="fa-solid fa-rotate"></i> {{localize "PotatoOrNot.PlayerCheck.AskAgain"}}
+		</button>
+	</footer>
+	<p class="hint">{{localize "PotatoOrNot.PlayerCheck.AskAgainHint"}}</p>
+</section>

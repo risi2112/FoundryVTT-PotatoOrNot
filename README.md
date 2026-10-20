@@ -10,6 +10,19 @@ This is a Foundry V14 fork of [Potato Or Not](https://github.com/fantasycalendar
 
 ---
 
+## Player Check (GM only)
+
+In **Game Settings → Configure Settings → Potato Or Not**, click **Open Player Check** to see, for every player:
+
+- whether Potato Or Not is running for them (they show up after logging in with this version),
+- whether they've picked a setting yet, and which one,
+- whether they're online, and when they last loaded the game.
+
+**Ask everyone to pick again** shows the potato prompt to everyone who is online right away, and to everyone else the
+next time they log in.
+
+---
+
 # Potato Or Not
 
 ![Latest Release Download Count](https://img.shields.io/github/downloads/Haxxer/FoundryVTT-PotatoOrNot/latest/module.zip?color=2b82fc&label=DOWNLOADS&style=for-the-badge) [![Forge Installs](https://img.shields.io/badge/dynamic/json?label=Forge%20Installs&query=package.installs&suffix=%25&url=https%3A%2F%2Fforge-vtt.com%2Fapi%2Fbazaar%2Fpackage%2Fpotato-or-not&colorB=006400&style=for-the-badge)](https://forge-vtt.com/bazaar#package=potato-or-not) ![Foundry Core Compatible Version](https://img.shields.io/badge/dynamic/json.svg?url=https%3A%2F%2Fgithub.com%2FHaxxer%2FFoundryVTT-PotatoOrNot%2Freleases%2Flatest%2Fdownload%2Fmodule.json&label=Foundry%20Version&query=$.compatibility.verified&colorB=orange&style=for-the-badge) ![Latest Version](https://img.shields.io/badge/dynamic/json.svg?url=https%3A%2F%2Fgithub.com%2FHaxxer%2FFoundryVTT-PotatoOrNot%2Freleases%2Flatest%2Fdownload%2Fmodule.json&label=Latest%20Release&prefix=v&query=$.version&colorB=red&style=for-the-badge)

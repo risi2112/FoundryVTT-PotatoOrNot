@@ -9,6 +9,8 @@ CONSTANTS.SETTING_KEYS = {
   POTATO_LEVEL: "potatoLevel",
   NUMBER_OF_SETTINGS: "numberOfSettings",
   SETTINGS: "settings",
+  PROMPT_ROUND: "promptRound",
+  SEEN_PROMPT_ROUND: "seenPromptRound",
 }
 
 CONSTANTS.SETTINGS = {
@@ -38,6 +40,21 @@ CONSTANTS.SETTINGS = {
     default: 5,
     type: Number,
     config: false
+  },
+  // Raised by the GM's "Ask everyone again" button; each client shows the dialog when it is higher than the
+  // round it last saw.
+  [CONSTANTS.SETTING_KEYS.PROMPT_ROUND]: {
+    scope: "world",
+    config: false,
+    default: 0,
+    type: Number,
+    onChange: (round) => { window.PotatoOrNot?.onPromptRound?.(round); }
+  },
+  [CONSTANTS.SETTING_KEYS.SEEN_PROMPT_ROUND]: {
+    scope: "client",
+    config: false,
+    default: 0,
+    type: Number
   },
   [CONSTANTS.SETTING_KEYS.SETTINGS]: {
     scope: "client",

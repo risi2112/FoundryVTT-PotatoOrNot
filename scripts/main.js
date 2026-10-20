@@ -17,6 +17,15 @@ Hooks.once("init", () => {
         restricted: false
     });
 
+    game.settings.registerMenu(CONSTANTS.MODULE_NAME, "player-check", {
+        name: "PotatoOrNot.PlayerCheck.MenuName",
+        hint: "PotatoOrNot.PlayerCheck.MenuHint",
+        label: "PotatoOrNot.PlayerCheck.MenuLabel",
+        icon: "fa-solid fa-clipboard-check",
+        type: PotatoPlayerCheck,
+        restricted: true
+    });
+
 });
 
 Hooks.once("ready", () => {
@@ -29,6 +38,7 @@ Hooks.once("ready", () => {
 
     setTimeout(() => {
         window.PotatoOrNot.postSetup();
+        reportStatus();
     }, 250);
 
 });
@@ -88,11 +98,27 @@ class PotatoOrNotHandler {
         const promptUsers = lib.getSetting(CONSTANTS.SETTING_KEYS.PROMPT_USERS);
         const numberOfSettings = lib.getSetting(CONSTANTS.SETTING_KEYS.NUMBER_OF_SETTINGS);
 
-        if (!hasBeenPrompted && promptUsers) {
+        // The GM can ask everyone to choose again from the Player Check window.
+        const promptRound = lib.getSetting(CONSTANTS.SETTING_KEYS.PROMPT_ROUND);
+        const askedAgain = !game.user.isGM && promptRound > lib.getSetting(CONSTANTS.SETTING_KEYS.SEEN_PROMPT_ROUND);
+        if (askedAgain) lib.setSetting(CONSTANTS.SETTING_KEYS.SEEN_PROMPT_ROUND, promptRound);
+
+        if ((!hasBeenPrompted && promptUsers) || askedAgain) {
             this.showDialog();
         } else if (currentNumberOfSettings !== numberOfSettings) {
             this.updateSettings();
         }
+    }
+
+    /**
+     * Called on every client when the GM presses "Ask everyone again" while they are connected.
+     *
+     * @param {number} round   The new prompt round
+     */
+    onPromptRound(round) {
+        if (game.user.isGM) return;
+        lib.setSetting(CONSTANTS.SETTING_KEYS.SEEN_PROMPT_ROUND, round);
+        this.showDialog();
     }
 
     async updateSettings() {
@@ -261,8 +287,10 @@ class PotatoOrNotApplication extends foundry.applications.api.HandlebarsApplicat
     static async myFormHandler(event, form, formData) {
         const level = form.querySelector(`.potato-level-container[active]`)
         if(!level) return;
-        PotatoOrNot.quality = Number(level.getAttribute("level"));
-        lib.setSetting(CONSTANTS.SETTING_KEYS.HAS_BEEN_PROMPTED, true);
+        const quality = Number(level.getAttribute("level"));
+        PotatoOrNot.quality = quality;
+        await lib.setSetting(CONSTANTS.SETTING_KEYS.HAS_BEEN_PROMPTED, true);
+        await reportStatus({ level: quality, prompted: true, chosenAt: Date.now() });
     }
 
     /** @override */
@@ -329,4 +357,106 @@ class PotatoOrNotApplication extends foundry.applications.api.HandlebarsApplicat
     //     lib.setSetting(CONSTANTS.SETTING_KEYS.HAS_BEEN_PROMPTED, true);
     // }
 
+}
+
+/* -------------------------------------------- */
+/*  Player Check (GM)                           */
+/* -------------------------------------------- */
+
+const STATUS_FLAG = "status";
+
+/**
+ * Saves this client's Potato Or Not status on its User, so the GM's Player Check window can show it.
+ *
+ * @param {object} [changes]   Values to override, e.g. a just-chosen level
+ */
+async function reportStatus(changes = {}) {
+    try {
+        const previous = game.user.getFlag(CONSTANTS.MODULE_NAME, STATUS_FLAG) ?? {};
+        await game.user.setFlag(CONSTANTS.MODULE_NAME, STATUS_FLAG, {
+            ...previous,
+            version: game.modules.get(CONSTANTS.MODULE_NAME)?.version ?? "",
+            level: lib.getSetting(CONSTANTS.SETTING_KEYS.POTATO_LEVEL),
+            prompted: lib.getSetting(CONSTANTS.SETTING_KEYS.HAS_BEEN_PROMPTED),
+            seenAt: Date.now(),
+            ...changes
+        });
+    } catch (err) {
+        console.warn("Potato Or Not | Could not save this player's status for the GM", err);
+    }
+}
+
+class PotatoPlayerCheck extends foundry.applications.api.HandlebarsApplicationMixin(foundry.applications.api.ApplicationV2) {
+
+    static DEFAULT_OPTIONS = {
+        id: "potato-or-not-player-check",
+        classes: ["potato-player-check"],
+        window: {
+            title: "PotatoOrNot.PlayerCheck.Title",
+            icon: "fa-solid fa-clipboard-check",
+            resizable: true
+        },
+        position: { width: 620, height: "auto" },
+        actions: {
+            askAgain: PotatoPlayerCheck.#onAskAgain
+        }
+    }
+
+    static PARTS = {
+        main: {
+            template: `modules/potato-or-not/templates/player-check.hbs`
+        }
+    }
+
+    /** Hook id for live refreshes while open. */
+    #hookId = null;
+
+    async _prepareContext() {
+        const i18n = (key) => game.i18n.localize(key);
+        const levels = [i18n("PotatoOrNot.BadTitle"), i18n("PotatoOrNot.MediumTitle"), i18n("PotatoOrNot.GoodTitle")];
+        const currentVersion = game.modules.get(CONSTANTS.MODULE_NAME)?.version ?? "";
+        const formatTime = (ms) => ms ? new Date(ms).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }) : "";
+
+        const rows = game.users.contents
+            .sort((a, b) => (a.isGM - b.isGM) || a.name.localeCompare(b.name))
+            .map((user) => {
+                const status = user.getFlag(CONSTANTS.MODULE_NAME, STATUS_FLAG);
+                let state = "notSeen";
+                if (status) state = status.prompted ? "chosen" : "notChosen";
+                return {
+                    name: user.name,
+                    isGM: user.isGM,
+                    online: user.active,
+                    state,
+                    stateLabel: i18n(`PotatoOrNot.PlayerCheck.State.${state}`),
+                    level: status?.prompted ? (levels[status.level] ?? "") : "",
+                    version: status?.version ?? "",
+                    outdated: !!status?.version && status.version !== currentVersion,
+                    seenAt: formatTime(status?.seenAt)
+                };
+            });
+
+        return { rows, onlinePlayers: game.users.filter((u) => u.active && !u.isGM).length };
+    }
+
+    async _onRender(context, options) {
+        await super._onRender(context, options);
+        if (this.#hookId === null) {
+            this.#hookId = Hooks.on("updateUser", (user, changes) => {
+                if (foundry.utils.hasProperty(changes, `flags.${CONSTANTS.MODULE_NAME}`) || "active" in changes) this.render();
+            });
+        }
+    }
+
+    _onClose(options) {
+        super._onClose(options);
+        if (this.#hookId !== null) Hooks.off("updateUser", this.#hookId);
+        this.#hookId = null;
+    }
+
+    static async #onAskAgain() {
+        const round = (lib.getSetting(CONSTANTS.SETTING_KEYS.PROMPT_ROUND) ?? 0) + 1;
+        await lib.setSetting(CONSTANTS.SETTING_KEYS.PROMPT_ROUND, round);
+        ui.notifications.info(game.i18n.localize("PotatoOrNot.PlayerCheck.AskedAgain"));
+    }
 }
