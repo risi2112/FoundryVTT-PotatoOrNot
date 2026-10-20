@@ -1,10 +1,14 @@
-> **This is a Foundry V14 fork** of [Potato Or Not](https://github.com/fantasycalendar/FoundryVTT-PotatoOrNot) by Fantasy Calendar.
->
-> **Install:** in Foundry, go to **Add-on Modules → Install Module**, paste this into **Manifest URL** and click **Install**:
->
-> ```
-> https://github.com/risi2112/FoundryVTT-PotatoOrNot/releases/latest/download/module.json
-> ```
+## Install in Foundry
+
+In Foundry, go to **Add-on Modules → Install Module**, paste this into **Manifest URL** at the bottom, and click **Install**:
+
+```
+https://github.com/risi2112/FoundryVTT-PotatoOrNot/releases/latest/download/module.json
+```
+
+This is a Foundry V14 fork of [Potato Or Not](https://github.com/fantasycalendar/FoundryVTT-PotatoOrNot) by Fantasy Calendar.
+
+---
 
 # Potato Or Not
 
